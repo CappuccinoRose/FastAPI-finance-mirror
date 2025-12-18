@@ -1,0 +1,49 @@
+services:
+  # FastAPI后端服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finance_mirror_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - SQLALCHEMY_DATABASE_URI=mysql+aiomysql://root:MySQL44080925%40@host.docker.internal:3306/finance_mirror_db
+      - SECRET_KEY=312769d8ee05553be96c2a04fc51aa5b9be6b23b58fec383804b84c301286acf
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - SQLALCHEMY_ECHO=true
+      - CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+      - PROJECT_NAME=My Finance System API
+      - API_V1_STR=/api/v1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    network_mode: bridge
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+
+# 定义网络
+networks:
+  finance_network:
+    driver: bridge
+
+# 定义数据卷
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  phpmyadmin_data:
+    driver: local
