@@ -1,18 +1,19 @@
 # app/main.py
 
+import logging
+
 from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.staticfiles import StaticFiles
+from starlette.responses import FileResponse
 
-from app.core.config import settings
 from app.api.v1.api import api_router
+from app.core.config import settings
 from app.core.exceptions import BusinessException, NotFoundException, ConflictException
 from app.core.logging import setup_logging
-import logging
 
 # --- 获取 logger 实例 ---
 logger = logging.getLogger(__name__)
@@ -34,8 +35,6 @@ app.add_middleware(
     allow_methods=["*"],                      # 允许所有 HTTP 方法
     allow_headers=["*"],                      # 允许所有请求头
 )
-# --- 添加静态文件中间件 ---
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # --- 包含 API 路由 ---
 app.include_router(api_router, prefix=settings.API_V1_STR)
@@ -49,6 +48,11 @@ async def root():
         "docs": "/docs",  # 指向FastAPI自动生成的API文档
         "health": "/health" # 指向健康检查端点
     }
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("app/static/favicon.ico")
+
 
 # --- 健康检查端点 ---
 @app.get("/health")
