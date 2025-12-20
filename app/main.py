@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.api.v1.api import api_router
@@ -33,6 +34,8 @@ app.add_middleware(
     allow_methods=["*"],                      # 允许所有 HTTP 方法
     allow_headers=["*"],                      # 允许所有请求头
 )
+# --- 添加静态文件中间件 ---
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # --- 包含 API 路由 ---
 app.include_router(api_router, prefix=settings.API_V1_STR)
