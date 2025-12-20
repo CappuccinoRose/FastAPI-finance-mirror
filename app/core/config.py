@@ -25,12 +25,7 @@ class Settings(BaseSettings):
     SQLALCHEMY_ECHO: bool = False
 
     # CORS 配置（可以是字符串，用逗号分隔，或者是列表）
-    CORS_ORIGINS: Union[str, list[str]] = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://finance-mirror.vercel.app"
-        "https://financemirror.mine.bz"
-    ]
+    CORS_ORIGINS: Union[str, list[str]] = ["*"]
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod
