@@ -1,4 +1,6 @@
 # app/crud/crud_transaction.py
+from typing import Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 
