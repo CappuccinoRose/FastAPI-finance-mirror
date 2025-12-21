@@ -4,8 +4,14 @@ from sqlalchemy import String, Numeric, ForeignKey, Integer, DateTime, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from decimal import Decimal
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from app.db.base import Base
+
+# 将跨模型导入移入 TYPE_CHECKING 块
+if TYPE_CHECKING:
+    from app.models.transaction import Transaction
+    from app.models.account import Account
 
 class Split(Base):
     __tablename__ = "splits"
@@ -21,6 +27,6 @@ class Split(Base):
     quantity_num: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     quantity_denom: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
+    # 关系定义保持不变，使用字符串引用
     transaction: Mapped["Transaction"] = relationship("Transaction", back_populates="splits")
     account: Mapped["Account"] = relationship("Account", back_populates="splits")
-

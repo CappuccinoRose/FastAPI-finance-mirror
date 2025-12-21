@@ -7,8 +7,10 @@ from typing import TYPE_CHECKING, Optional
 
 from app.db.base import Base
 
+# 将所有跨模型导入移入 TYPE_CHECKING 块
 if TYPE_CHECKING:
     from app.models.vendor import Vendor
+    # 为了保持关系一致性，Transaction 也需要在这里进行类型提示
     from app.models.transaction import Transaction
 
 
@@ -32,6 +34,5 @@ class PurchaseBill(Base):
     # --- 关系定义 ---
     vendor: Mapped["Vendor"] = relationship("Vendor", back_populates="purchase_bills")
 
-    # 正确的写法：使用 Mapped 语法，并且是单向关系
+    # 与 Transaction 的关系，保持与 Transaction.py 中的逻辑一致（单向引用）
     posted_transaction: Mapped[Optional["Transaction"]] = relationship("Transaction")
-

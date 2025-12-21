@@ -4,8 +4,15 @@ from sqlalchemy import String, TEXT, ForeignKey, Integer, Numeric, Boolean, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from decimal import Decimal
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from app.db.base import Base
+
+# 将跨模型导入移入 TYPE_CHECKING 块
+if TYPE_CHECKING:
+    from app.models.invoice import Invoice
+    from app.models.account import Account
+
 
 class Entry(Base):
     __tablename__ = "entries"
@@ -21,5 +28,6 @@ class Entry(Base):
     price: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False, default=0.00)
     discounted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    # --- 关系定义 ---
     invoice: Mapped["Invoice"] = relationship("Invoice", back_populates="entries")
     account: Mapped["Account"] = relationship("Account")

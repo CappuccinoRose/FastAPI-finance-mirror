@@ -2,7 +2,12 @@
 from sqlalchemy import String, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uuid import uuid4
+from typing import TYPE_CHECKING
 from app.db.base import Base
+
+# 将跨模型导入移入 TYPE_CHECKING 块
+if TYPE_CHECKING:
+    from app.models.split import Split
 
 
 class Account(Base):
@@ -18,7 +23,10 @@ class Account(Base):
     placeholder: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Relationships
+    # 自引用关系，不需要导入其他模型，所以可以直接使用字符串
     parent: Mapped["Account"] = relationship("Account", remote_side=[guid], back_populates="children")
-    # 将 lazy="raise" 添加到 children 关系，以防止意外的同步查询
-    children: Mapped[list["Account"]] = relationship("Account", back_populates="parent", cascade="all, delete-orphan", lazy="raise")
-    splits: Mapped[list["Split"]] = relationship("Split", back_populates="account", lazy="raise") # 同样为 splits 添加 lazy="raise"
+    children: Mapped[list["Account"]] = relationship("Account", back_populates="parent", cascade="all, delete-orphan",
+                                                     lazy="raise")
+
+    # 与 Split 的关系，使用字符串引用
+    splits: Mapped[list["Split"]] = relationship("Split", back_populates="account", lazy="raise")

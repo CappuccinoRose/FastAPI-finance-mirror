@@ -4,8 +4,9 @@ from sqlalchemy import String, TEXT, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
+# 从项目基类导入 Base
 from app.db.base import Base
-from app.models import Customer, Transaction, Entry
+# 删除了导致循环导入的行: from app.models import Customer, Transaction, Entry
 
 
 class Invoice(Base):
@@ -32,4 +33,3 @@ class Invoice(Base):
 
     # 3. 与 Entry 的关系 (一对多)
     entries: Mapped[list["Entry"]] = relationship("Entry", back_populates="invoice", cascade="all, delete-orphan", passive_deletes=True)
-
