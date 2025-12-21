@@ -5,6 +5,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
 from app.db.base import Base
+from app.models import Customer, Transaction, Entry
+
 
 class Invoice(Base):
     __tablename__ = "invoices"
@@ -19,7 +21,15 @@ class Invoice(Base):
     notes: Mapped[str | None] = mapped_column(TEXT)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
+    # --- 关系定义 ---
+
+    # 1. 与 Customer 的关系 (多对一)
     customer: Mapped["Customer"] = relationship("Customer", back_populates="invoices")
-    post_transaction: Mapped["Transaction"] = relationship("Transaction", back_populates="invoices")
+
+    # 2. 与 Transaction 的关系 (一对一)
+    # 这个关系与 Transaction.invoice 配对
+    post_transaction: Mapped["Transaction"] = relationship("Transaction", back_populates="invoice")
+
+    # 3. 与 Entry 的关系 (一对多)
     entries: Mapped[list["Entry"]] = relationship("Entry", back_populates="invoice", cascade="all, delete-orphan", passive_deletes=True)
 

@@ -1,26 +1,37 @@
+# app/models/purchase_bill.py
 import uuid
+from sqlalchemy import String, Date, Text, DECIMAL, ForeignKey, DateTime
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import date, datetime, timezone
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Column, String, Date, Text, DECIMAL, ForeignKey
-from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship
+from app.db.base import Base
 
-from .base import BaseModel
+if TYPE_CHECKING:
+    from app.models.vendor import Vendor
+    from app.models.transaction import Transaction
 
 
-class PurchaseBill(BaseModel):
+class PurchaseBill(Base):
     __tablename__ = "purchase_bills"
 
-    guid = Column(CHAR(36), primary_key=True, default=uuid.uuid4, unique=True, index=True)
-    vendor_guid = Column(String(36), ForeignKey("vendors.guid", ondelete="RESTRICT"), nullable=False)
-    bill_number = Column(String(50), nullable=False, unique=True, index=True)
-    bill_date = Column(Date, nullable=False)
-    due_date = Column(Date)
-    total_amount = Column(DECIMAL(15, 2), nullable=False, default=0.00)
-    notes = Column(Text)
-    status = Column(String(20), nullable=False, default="draft", index=True) # draft, confirmed, posted, cancelled
-    post_txn_guid = Column(String(36), ForeignKey("transactions.guid", ondelete="SET NULL"))
+    # --- 字段定义 (使用 Mapped 语法) ---
+    guid: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid.uuid4, index=True)
+    vendor_guid: Mapped[str] = mapped_column(ForeignKey("vendors.guid", ondelete="RESTRICT"), nullable=False)
+    bill_number: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
+    bill_date: Mapped[date] = mapped_column(Date, nullable=False)
+    due_date: Mapped[date | None] = mapped_column(Date)
+    total_amount: Mapped[DECIMAL] = mapped_column(DECIMAL(15, 2), nullable=False, default=0.00)
+    notes: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft", index=True)
+    post_txn_guid: Mapped[str | None] = mapped_column(ForeignKey("transactions.guid", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now(timezone.utc),
+                                                 onupdate=datetime.now(timezone.utc))
 
-    # Relationships
-    vendor = relationship("Vendor", back_populates="purchase_bills")
-    # 使用 backref 在 Transaction 模型上动态创建一个反向引用
-    posted_transaction = relationship("Transaction", backref="purchase_bill")
+    # --- 关系定义 ---
+    vendor: Mapped["Vendor"] = relationship("Vendor", back_populates="purchase_bills")
+
+    # 正确的写法：使用 Mapped 语法，并且是单向关系
+    posted_transaction: Mapped[Optional["Transaction"]] = relationship("Transaction")
+
