@@ -2,19 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "app/main.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "app/main.py"
+      "dest": "api/index.py"
     }
-  ],
-  "functions": {
-    "app/main.py": {
-      "runtime": "python3.13"
-    }
-  }
+  ]
 }
