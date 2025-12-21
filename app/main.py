@@ -34,9 +34,6 @@ supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
 
-
-
-
 # --- 创建唯一的 FastAPI 应用实例 ---
 app = FastAPI(
     title=settings.PROJECT_NAME,
