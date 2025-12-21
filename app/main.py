@@ -53,7 +53,7 @@ app.add_middleware(
 )
 
 # --- 包含 API 路由 ---
-app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(api_router)
 
 # --- 根路径处理器 ---
 @app.get("/")
