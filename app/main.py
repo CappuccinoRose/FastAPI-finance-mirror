@@ -17,6 +17,8 @@ from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.exceptions import BusinessException, NotFoundException, ConflictException
 from app.core.logging import setup_logging
+import sys
+sys.path.append(".")  # 确保能找到 app 模块
 
 # --- 获取 logger 实例 ---
 logger = logging.getLogger(__name__)
@@ -37,7 +39,7 @@ supabase: Client = create_client(supabase_url, supabase_key)
 # --- 创建唯一的 FastAPI 应用实例 ---
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url="/openapi.json"  # 确保这里没有前缀
 )
 
 # --- 添加 CORS 中间件 ---
@@ -54,7 +56,7 @@ app.add_middleware(
 )
 
 # --- 包含 API 路由 ---
-app.include_router(api_router)
+app.include_router(api_router) 
 
 # --- 根路径处理器 ---
 @app.get("/")
@@ -70,21 +72,26 @@ async def root():
 async def favicon():
     return FileResponse("app/static/favicon.ico")
 
+
 @app.get("/test-db")
 async def test_database_connection():
+    # 添加简单的权限检查或仅在开发环境启用
+    if os.getenv("ENVIRONMENT") == "production":
+        return {"message": "Test endpoint not available in production"}
+
     try:
-        # 执行简单查询（例如查询 accounts 表，假设表存在）
         result = supabase.table("accounts").select("*").limit(1).execute()
         return {
             "status": "success",
             "message": "数据库连接正常",
-            "data": result.data  # 返回查询结果（若表为空则返回 []）
+            "data": result.data
         }
     except Exception as e:
         return {
             "status": "error",
             "message": f"连接失败: {str(e)}"
         }
+
 
 # --- 健康检查端点 ---
 @app.get("/health")

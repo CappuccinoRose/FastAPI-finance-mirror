@@ -7,10 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # 获取项目根目录的绝对路径
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# 在类定义之前定义默认值
+DEFAULT_CORS_ORIGINS = ["*"]
 
 class Settings(BaseSettings):
-    # API配置
-    API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "My Finance System API"
 
     # 数据库配置
@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     SQLALCHEMY_ECHO: bool = False
 
     # CORS 配置（可以是字符串，用逗号分隔，或者是列表）
-    CORS_ORIGINS: Union[str, list[str]] = ["*"]
+    CORS_ORIGINS: Union[str, list[str]] = DEFAULT_CORS_ORIGINS
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod
@@ -35,9 +35,8 @@ class Settings(BaseSettings):
             return v
         if isinstance(v, str):
             origins = [origin.strip() for origin in v.split(",") if origin.strip()]
-            # 如果环境变量有值，就用环境变量的；否则用上面默认的
-            return origins if origins else settings.model_fields['CORS_ORIGINS'].default
-        return settings.model_fields['CORS_ORIGINS'].default
+            return origins if origins else DEFAULT_CORS_ORIGINS
+        return DEFAULT_CORS_ORIGINS
 
     # Pydantic V2 配置，使用绝对路径指向 .env 文件
     model_config = SettingsConfigDict(
