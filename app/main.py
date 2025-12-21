@@ -17,6 +17,7 @@ from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.exceptions import BusinessException, NotFoundException, ConflictException
 from app.core.logging import setup_logging
+
 import sys
 sys.path.append(".")  # 确保能找到 app 模块
 
@@ -56,7 +57,7 @@ app.add_middleware(
 )
 
 # --- 包含 API 路由 ---
-app.include_router(api_router) 
+app.include_router(api_router)
 
 # --- 根路径处理器 ---
 @app.get("/")
