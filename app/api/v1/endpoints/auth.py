@@ -3,8 +3,8 @@
 import random
 import string
 from datetime import timedelta
-from typing import Any, Optional
-from fastapi import APIRouter, Depends, status, HTTPException, Body
+from typing import Any, Union
+from fastapi import APIRouter, Depends, status, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,8 +27,7 @@ class LoginRequest(BaseModel):
 @router.post("/login", response_model=schemas.Token, summary="用户登录获取访问令牌")
 async def login_for_access_token(
         db: AsyncSession = Depends(deps.get_db),
-        form_data: OAuth2PasswordRequestForm = Depends(),
-        json_data: Optional[LoginRequest] = Body(None)
+        form_data: Union[OAuth2PasswordRequestForm, LoginRequest] = Depends()
 ):
     """
     OAuth2兼容的令牌登录，为后续请求获取访问令牌。
@@ -36,15 +35,15 @@ async def login_for_access_token(
     - **password**: 密码
     - 支持JSON和表单数据格式
     """
-    # 优先使用JSON数据，如果没有则使用表单数据
-    if json_data:
-        username = json_data.username
-        password = json_data.password
-        print(f"JSON login attempt: username={username}")
+    # 处理不同格式的数据
+    if isinstance(form_data, OAuth2PasswordRequestForm):
+        username = form_data.username
+        password = form_data.password
+        print(f"📝 Form login attempt: username={username}")
     else:
         username = form_data.username
         password = form_data.password
-        print(f"Form login attempt: username={username}")
+        print(f"📝 JSON login attempt: username={username}")
 
     # 验证用户名和密码
     if not username or not password:
@@ -53,7 +52,7 @@ async def login_for_access_token(
             detail="用户名和密码不能为空"
         )
 
-    print(f"Authenticating user: {username}")
+    print(f"🔐 Authenticating user: {username}")
 
     # 认证用户
     user = await crud_employee.authenticate(
@@ -61,11 +60,11 @@ async def login_for_access_token(
     )
 
     if not user:
-        print(f"Authentication failed for user: {username}")
+        print(f"❌ Authentication failed for user: {username}")
         raise CredentialsException(detail="用户名或密码不正确")
 
     if not user.active:
-        print(f"User inactive: {username}")
+        print(f"⚠️ User inactive: {username}")
         raise InactiveUserException()
 
     # 生成访问令牌
@@ -74,7 +73,7 @@ async def login_for_access_token(
         subject=user.username, expires_delta=access_token_expires
     )
 
-    print(f"Login successful for user: {username}")
+    print(f"✅ Login successful for user: {username}")
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -126,7 +125,7 @@ async def request_password_reset(
         return {"reset_code": "如果用户存在，重置码已发送"}
     reset_code = "".join(random.choices(string.ascii_letters + string.digits, k=4))
     reset_codes[user.username] = reset_code
-    print(f"DEBUG: Password reset code for {user.username} is {reset_code}")
+    print(f"🔑 DEBUG: Password reset code for {user.username} is {reset_code}")
 
     return {"reset_code": reset_code}
 
