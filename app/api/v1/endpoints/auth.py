@@ -3,9 +3,10 @@
 import random
 import string
 from datetime import timedelta
-from typing import Any
-from fastapi import APIRouter, Depends, status, HTTPException
+from typing import Any, Union
+from fastapi import APIRouter, Depends, status, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from app import schemas
 from app.api.v1 import deps
@@ -18,17 +19,34 @@ from app.models.employee import Employee
 router = APIRouter()
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
 @router.post("/login", response_model=schemas.Token, summary="用户登录获取访问令牌")
 async def login_for_access_token(
-        db: AsyncSession = Depends(deps.get_db), form_data: OAuth2PasswordRequestForm = Depends()
+        db: AsyncSession = Depends(deps.get_db),
+        form_data: OAuth2PasswordRequestForm = Depends(),
+        request: Request = Depends()
 ):
     """
     OAuth2兼容的令牌登录，为后续请求获取访问令牌。
     - **username**: 用户名
     - **password**: 密码
     """
+    # 尝试从JSON获取数据
+    try:
+        json_data = await request.json()
+        username = json_data.get('username')
+        password = json_data.get('password')
+    except:
+        # 如果不是JSON，使用表单数据
+        username = form_data.username
+        password = form_data.password
+
     user = await crud_employee.authenticate(
-        db, username=form_data.username, password=form_data.password
+        db, username=username, password=password
     )
     if not user:
         raise CredentialsException(detail="用户名或密码不正确")
@@ -41,6 +59,7 @@ async def login_for_access_token(
         subject=user.username, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 @router.post("/register", response_model=schemas.User, status_code=status.HTTP_201_CREATED, summary="用户注册")
 async def register(
@@ -74,6 +93,7 @@ async def read_users_me(
     获取当前登录用户的详细信息。
     """
     return current_user
+
 
 reset_codes = {}
 
