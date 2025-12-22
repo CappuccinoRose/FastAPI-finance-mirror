@@ -3,8 +3,8 @@
 import random
 import string
 from datetime import timedelta
-from typing import Any, Union
-from fastapi import APIRouter, Depends, status, HTTPException, Request
+from typing import Any, Optional
+from fastapi import APIRouter, Depends, status, HTTPException, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,36 +28,53 @@ class LoginRequest(BaseModel):
 async def login_for_access_token(
         db: AsyncSession = Depends(deps.get_db),
         form_data: OAuth2PasswordRequestForm = Depends(),
-        request: Request = Depends()
+        json_data: Optional[LoginRequest] = Body(None)
 ):
     """
     OAuth2兼容的令牌登录，为后续请求获取访问令牌。
     - **username**: 用户名
     - **password**: 密码
+    - 支持JSON和表单数据格式
     """
-    # 尝试从JSON获取数据
-    try:
-        json_data = await request.json()
-        username = json_data.get('username')
-        password = json_data.get('password')
-    except:
-        # 如果不是JSON，使用表单数据
+    # 优先使用JSON数据，如果没有则使用表单数据
+    if json_data:
+        username = json_data.username
+        password = json_data.password
+        print(f"JSON login attempt: username={username}")
+    else:
         username = form_data.username
         password = form_data.password
+        print(f"Form login attempt: username={username}")
 
+    # 验证用户名和密码
+    if not username or not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="用户名和密码不能为空"
+        )
+
+    print(f"Authenticating user: {username}")
+
+    # 认证用户
     user = await crud_employee.authenticate(
         db, username=username, password=password
     )
+
     if not user:
+        print(f"Authentication failed for user: {username}")
         raise CredentialsException(detail="用户名或密码不正确")
 
     if not user.active:
+        print(f"User inactive: {username}")
         raise InactiveUserException()
 
+    # 生成访问令牌
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
         subject=user.username, expires_delta=access_token_expires
     )
+
+    print(f"Login successful for user: {username}")
     return {"access_token": access_token, "token_type": "bearer"}
 
 
